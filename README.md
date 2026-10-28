@@ -34,3 +34,11 @@ Support desk. Decision records: whoever signed them.
 ---
 
 Exported 2026-10-04 from the `support` repo, `apps/kb/` → `src/`.
+
+## Rendering
+
+`npm install --legacy-peer-deps && npm run build` renders every page to `build/` (SvelteKit + mdsvex,
+static). `npm run preview` serves it at http://localhost:4173/kb/.
+
+The rendered site is committed in `build/`. `rendered/4471-problems.jpg` is
+[the #4471 split](src/routes/kb/incidents/4471-problems/+page.svx) as the desk sees it.

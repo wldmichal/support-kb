@@ -1,0 +1,55 @@
+---
+layout: runbook
+title: '#4471 · three problems, not one'
+owner: support desk
+status: open
+reviewed: 2026-10-28
+signature: wldmichal
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+
+  const REPO = 'https://github.com/wldmichal/support-kb/issues';
+  const issues = { parser: `${REPO}/1`, hint: `${REPO}/2`, 'one-day': `${REPO}/3` };
+</script>
+
+[#4471](/kb/incidents/4471) says every date report is one issue, with one fix queued. Its own
+cause table says otherwise, and so do the reports. There are three problems, each needing its own
+fix, and each now has its own ticket.
+
+<Callout kind="warn">
+The queued parser fix closes only the first problem. The other two keep coming in after it ships,
+and they will be merged into a closed ticket.
+</Callout>
+
+## The split
+
+<ProblemTable ticket={4471} {issues} />
+
+## How to tell them apart
+
+**parser:** the tenant writes the day first and the shared parser reads the month first, so
+7 April comes out as 4 July. Any channel, any day-first tenant. This is what #4471 describes.
+
+**hint:** the tenant runs booking-v3, whose date field shows the hint `MM/DD/YYYY`. People
+type the month first, as the hint asks, and the form reads it the tenant's way, day first. The
+date comes out flipped too, but the fix is the hint, not the parser. These come in through the
+form only, from booking-v3 tenants only. Intake tags them by the reporter's browser, so the
+"tagged as" column on #4471 doesn't match: go by tenant and channel, as `causes.ts` does.
+
+**one-day:** the date moves back one day, not across months: Tuesday 12 May shows as Monday
+11 May; a meeting reaches Lisbon as Tuesday and Toronto as Monday. Nothing is flipped, so the
+parser fix won't touch it. The desk had already noted these reports (`desk-notes.json`) but filed
+them under the parser by tenant.
+
+## Why they ended up together
+
+Triage merges on subject line alone ([decision 0001](/kb/decisions/0001-dedupe-by-subject)),
+and all three problems arrive under the same subjects: "Date is wrong", "Wrong day on the
+invite". That page hasn't been reviewed since June 2024. Until a new decision replaces it,
+check tenant and channel before merging a date report into a ticket.
+
+<RenderStamp {signature} />
