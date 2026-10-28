@@ -5,8 +5,9 @@
   import { tenantOf } from '#lib/kb/locales';
   import { groupByProblem, type Problem } from '#lib/kb/problems';
 
-  // `issues`: problem → link to the ticket that owns it.
-  let { ticket, issues = {} }: { ticket: number; issues?: Partial<Record<Problem, string>> } = $props();
+  type Issue = { url: string; status: string };
+  // `issues`: problem → the ticket that owns it, and where that ticket stands.
+  let { ticket, issues = {} }: { ticket: number; issues?: Partial<Record<Problem, Issue>> } = $props();
 
   const LABEL: Record<Problem, string> = {
     parser: 'shared parser reads the date month first',
@@ -16,7 +17,7 @@
   };
 
   const result = $derived(groupByProblem(reports as Report[], ticket, tenantOf, notes.oneDayMove));
-  const placed = $derived(result.groups.reduce((n, g) => n + g.reports, 0));
+  const causes = $derived(result.groups.filter((g) => g.within.length === 0));
   const channels = (c: Record<string, number>) =>
     Object.entries(c)
       .sort((a, b) => b[1] - a[1])
@@ -27,9 +28,7 @@
 
 <p class="sum">
   <strong>{result.merged}</strong> reports merged into #{ticket} ·
-  <strong>{result.groups.length}</strong>
-  {result.groups.length === 1 ? 'problem' : 'problems'} ·
-  {placed === result.merged ? 'every report placed once' : `${result.merged - placed} reports unplaced`}
+  <strong>{causes.length}</strong> causes by tenant, as the desk files them
 </p>
 
 <table>
@@ -38,14 +37,18 @@
   </thead>
   <tbody>
     {#each result.groups as g (g.problem)}
-      <tr>
-        <td><code>{g.problem}</code><br /><span class="what">{LABEL[g.problem]}</span></td>
+      {@const issue = issues[g.problem]}
+      <tr class:open={issue?.status === 'open'}>
+        <td>
+          <code>{g.problem}</code><br /><span class="what">{LABEL[g.problem]}</span>
+          {#if g.within.length}<br /><span class="what">counted under {g.within.join(', ')} above</span>{/if}
+        </td>
         <td>{g.reports}</td>
         <td>{g.tenants}</td>
         <td class="what">{channels(g.channels)}</td>
         <td>{g.firstSeen} → {g.lastSeen}</td>
         <td>
-          {#if issues[g.problem]}<a href={issues[g.problem]}>{ticketName(issues[g.problem]!)}</a>{:else}<span class="none">none yet</span>{/if}
+          {#if issue}<a href={issue.url}>{ticketName(issue.url)}</a><br /><span class="status">{issue.status}</span>{:else}<span class="none">none yet</span>{/if}
         </td>
       </tr>
     {/each}
@@ -55,5 +58,7 @@
 <style>
   .sum { font-size: 1.1rem; }
   .what { color: var(--muted); font-size: 0.85em; }
+  .status { font-size: 0.85em; color: var(--muted); }
+  .open .status { color: var(--warn); font-weight: 600; }
   .none { color: var(--warn); font-weight: 600; }
 </style>
